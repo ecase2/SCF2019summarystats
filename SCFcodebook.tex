@@ -1,0 +1,75 @@
+\documentclass[12pt]{article}
+\usepackage{hyperref}
+\hypersetup{
+    colorlinks=true,      
+    urlcolor=magenta, 
+    linkcolor = magenta
+    }
+\usepackage[margin =.75 in]{geometry}
+
+\title{codebook for replicating/extending SCF cross sections}
+\author{emily case}
+\date{\today}
+\begin{document}
+\maketitle
+
+This file explains variable definitions, file organization, etc. for replicating and extending the ``interactive chart'' on the Federal Reserve's website. The interactive chart does not include cross-sections, and that is the main contribution of this code, but it also demonstrates how to calculate the means and medians and their standard errors. These calculations are not trivial, because the Survey of Consumer Finances (SCF) data includes (1) imputations and (2) weights. 
+\section{main variables for analysis}
+These variables are all in 2019 dollars, and are the main variables of interest. Each Excel file is titled with the main variable name, and the sheets within an Excel file are the cross-sectional variables. 
+
+\begin{table}[h!]
+	\begin{tabular}{p{0.1\linewidth} p{0.8\linewidth}}
+		\texttt{retqliq} & Total value of quasi-liquid held by household. Includes IRAs, Keoghs, thrift-type accounts, and future and current account-type pensions.	\\\\
+		\texttt{houses} & Total value of primary residence of household. Excludes the part of a farm or ranch used in a farming or ranching business.	\\\\
+		\texttt{asset} & Total value of assets held by household; the sum of financial and nonfinancial assets. 	\\\\
+		\texttt{debt} & Total value of debt held by the household. Includes principal residence debt (mortgages and HELOCs), other lines of credit, debt for other residential property, credit card debt, installment loans, and other debt.	\\\\
+		\texttt{networth} & Total net worth of household; the difference between assets and debt. See definitions of assets and debt for further clarification.\\\\
+		\texttt{bus} & Total value of business(es) in which the household has either an active or nonactive interest. Businesses include both actively and nonacitvely-managed business(es). Value of active business(es) calculated as net equity if business(es) were sold today, plus loans from the household to the business(es), minus loans from the business(es) to the household not previously reported, plus value of personal assets used as collateral for business(es) loans that were reported earlier. Value of nonactive business(es) is calculated as the market value of the business(es).\\
+	\end{tabular}
+\end{table}
+
+\section{cross-sectional variables}
+These variables were used to create the cross-sectional statistics, and are categorical variables. Please note that the last three variables (which start with `h') are used in conjuction with the corresponding main variable. The interactive chart on the Federal Reserve's website conditions results on whether or not families have the variable in question. For example, rather than taking the average home value of all respondents, they take the average home value of respondents who own a home. 
+\begin{table}[h!]
+	\begin{tabular}{p{0.1\linewidth} p{0.8\linewidth}}
+		\texttt{agegroup} & Age group of the reference person: 18-34, 35- 54, and 55 or older. \\\\
+		\texttt{racecl4} & Class of race of respondent: White, non-mixed race; Black/African-American, non-mixed race; Hispanic/Latino, non-mixed race; Other.\\\\
+		\texttt{racecl} & Binary class of race of respondent: White, non-Hispanic; nonwhite or Hispanic. \\\\
+		\texttt{occat1} & Occupation categories for reference person: Work for someone else; self-employed/partnership; retired/disabled + (student/homemaker/misc. not working and age 65 or older); other groups not working (mainly those under 65 and out of the labor force).\\\\
+		\texttt{edugroup} & Education level categories for reference person: Less than a high school degree; high school degree; some college or associates degree; bachelors degree or graduate school.\\\\
+		\texttt{hbus} & Respondent has (or does not have) active or nonactively managed business(es). \\\\
+		\texttt{hretqliq} & Respondent has (or does not have) any type of account that would be included in the \texttt{retqliq} variable.\\\\
+		\texttt{hhouses} & Respondent owns (or does not own) a house. \\
+	\end{tabular}
+\end{table}
+
+\section{files and code organization}
+Each Excel file corresponds to one of the main variables, and the sheets within the file correspond to different cross-sections of the data. Each Excel file is created using 600 iterations of the Bootstrapping method, as is recommended by the SCF codebook in order to have accurate standard deviations. The means and their standard errors, the medians and their standard errors, and observation counts are reported. \textit{Note that for some cross-sections, there were not enough observations. This is represented by a value of -999 in the Excel file.}
+
+\subsection{code and data files}
+All code was run in Stata. 
+\\\\
+\textbf{Stata do files:}
+\begin{itemize}
+	\item \texttt{RUN.do} is the ``home base'' file, and should run the entire program. In this file, users can change (1) the main variables list, which tells Stata which main variables (that are in dollar amounts) to run analyses on, and (2) the iteration amount. Those just wishing to experiment with the code should choose a very small iteration amount, such as 10. This code takes a very long time to run!! 
+	\item \texttt{0\_load.do} loads the data, cleans it, and creates variables and their value labels. 
+	\item \texttt{output.do} acts as a giant function. It receives the main variable from the \texttt{RUN} file, calculates all of the results, and automatically outputs the results to a formatted Excel file. 
+	\item \texttt{mdn.do} is a smaller function which calculates means, medians, and standard errors for a particular subset of data. For example, it calculates the statistics for respondents with \texttt{racecl4 = 1} and \texttt{agegroup = 2}. This is the file that takes so long. Statistics are calculated using the Stata command \texttt{scfcombo},\footnote{Karen Pence, 2015.``SCFCOMBO: Stata module to estimate errors using the Survey of Consumer Finances,'' Statistical Software Components S458017, Boston College Department of Economics, revised 04 Oct 2015.} which needs to be installed. 
+	\item \texttt{excelfmt.do} formats the excel files to look more readable. 
+\end{itemize}
+\textbf{Data files downloaded from SCF:}
+\begin{itemize}
+	\item \texttt{rscfp2019.dta} contains all the variables for analysis. 
+	\item \texttt{p19\_rw1.dta} contains the weights for the bootstrap method. \textit{Note: this file is needed in order to use the Stata command scfcombo!!} 
+\end{itemize}
+
+\section{Helpful links/citations}
+\begin{itemize}
+	\item The SCF data can be downloaded \href{https://www.federalreserve.gov/econres/scfindex.htm}{here}. 
+	\item The SCF interactive chart used to check calculations is \href{https://www.federalreserve.gov/econres/scf/dataviz/scf/chart/#series:Primary_Residence;demographic:all;population:1;units:mean;range:1989,2019}{here}. 
+	\item The SCF variable descriptions can be found \href{https://sda.berkeley.edu/sdaweb/docs/scfcomb2019/DOC/hcbkfx0.htm}{here}. 
+	\item The Stata package for \texttt{scfcombo} can be found \href{https://ideas.repec.org/c/boc/bocode/s458017.html}{here}
+	\item This \href{https://stats.oarc.ucla.edu/stata/seminars/applied-svy-stata13/#:~:text=The\%20probability\%20weight\%2C\%20called\%20a,be\%2010\%2F3\%20\%3D\%203.33.}{website} was helpful to learn about sampling weights. 
+\end{itemize}
+
+\end{document}
